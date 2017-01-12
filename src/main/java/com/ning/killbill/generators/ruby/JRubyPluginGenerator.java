@@ -46,6 +46,12 @@ public class JRubyPluginGenerator extends RubyBaseGenerator {
             .add(new ClassEnumOrInterface("EnumeratorIterator", ClassEnumOrInterface.ClassEnumOrInterfaceType.CLASS, null, null, false))
             .build();
 
+    // Only plugged for Method return value
+    private static final List<String> SKIP_NOT_IMPLEMENTED_TYPE = ImmutableList.<String>builder()
+            .add("org.joda.time.Period")
+            .build();
+
+
     private final List<ClassEnumOrInterface> staticallyGeneratedClasses;
 
     public JRubyPluginGenerator() {
@@ -391,6 +397,11 @@ public class JRubyPluginGenerator extends RubyBaseGenerator {
         final String returnValueType = type.getBaseType();
         final String returnValueGeneric = type.getGenericType();
 
+        if (SKIP_NOT_IMPLEMENTED_TYPE.contains(returnValueType)) {
+            System.err.println("SKIPPING METHOD " + member + ": Return value type has not been implemented " + returnValueType);
+            return;
+        }
+
         writeWithIndentationAndNewLine("# conversion for " + member + " [type = " + type.toString() + "]", w, indentOffset);
 
         // See https://github.com/killbill/killbill-java-parser/issues/6 and https://github.com/killbill/killbill-java-parser/issues/7
@@ -566,6 +577,10 @@ public class JRubyPluginGenerator extends RubyBaseGenerator {
     private void writeConversionToJava(final String member, final Type type, final List<ClassEnumOrInterface> allClasses, final Writer w, int indentOffset, String memberPrefix, int depth) throws GeneratorException, IOException {
         final String returnValueType = type.getBaseType();
         final String returnValueGeneric = type.getGenericType();
+
+        if (SKIP_NOT_IMPLEMENTED_TYPE.contains(returnValueType)) {
+            return;
+        }
 
         writeWithIndentationAndNewLine("# conversion for " + member + " [type = " + type.toString() + "]", w, indentOffset);
         if (returnValueType.equals("byte")) {
