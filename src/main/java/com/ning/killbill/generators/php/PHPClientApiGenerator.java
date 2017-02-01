@@ -31,7 +31,7 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
     private final static String LICENSE_NAME = "PHPLicense.txt";
 
     private final static int INDENT_LEVEL = 2;
-    private final static String DEFAULT_BASE_CLASS = "Killbill_Resource";
+    private final static String DEFAULT_BASE_CLASS = "\\Killbill\\Client\\Resource";
 
 
     protected int curIndent = 0;
@@ -49,7 +49,7 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
     @Override
     protected String createFileName(final String objName, boolean addPHPExtension) {
         final String extension = addPHPExtension ? ".php" : "";
-        return camelToUnderscore(createClassName(objName) + extension);
+        return createClassName(objName) + extension;
     }
 
     @Override
@@ -72,7 +72,7 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
         try {
             w = new FileWriter(output, true);
 
-            writeWithIndentationAndNewLine("require_once(dirname(__FILE__) . '/../resource.php');", w, 0);
+            writeWithIndentationAndNewLine("namespace Killbill\\Client\\Type;", w, 0);
 
             writeHeader(w);
 
@@ -116,10 +116,7 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
     }
 
     private static String createClassName(final String objName) {
-        final String prefix = "Killbill_";
-        StringBuilder tmp  = new StringBuilder(prefix);
-        tmp.append(objName.replace("Json", "Attributes"));
-        return tmp.toString();
+        return objName.replace("Json", "Attributes");
     }
 
     protected void writeHeader(final Writer w) throws IOException {
