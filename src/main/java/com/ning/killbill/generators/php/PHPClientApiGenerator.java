@@ -84,11 +84,13 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
                 final String attribute = getJsonPropertyAnnotationValue(obj, f);
                 if (first) {
                     first = false;
-                    writeWithIndentationAndNewLine("protected $" + attribute + ";", w, INDENT_LEVEL);
+                    writeWithIndentationAndNewLine("protected $" + attribute + " = null;", w, INDENT_LEVEL);
                 } else {
-                    writeWithIndentationAndNewLine("protected $" + attribute + ";", w, 0);
+                    writeWithIndentationAndNewLine("protected $" + attribute + " = null;", w, 0);
                 }
             }
+
+            writeNewLine(w);
 
             for (Field f : ctor.getOrderedArguments()) {
                 final String attribute = getJsonPropertyAnnotationValue(obj, f);
