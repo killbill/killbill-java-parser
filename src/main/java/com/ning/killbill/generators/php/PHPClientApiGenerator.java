@@ -84,11 +84,31 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
                 final String attribute = getJsonPropertyAnnotationValue(obj, f);
                 if (first) {
                     first = false;
-                    writeWithIndentationAndNewLine("protected $" + attribute + ";", w, INDENT_LEVEL);
+                    writeWithIndentationAndNewLine("protected $" + attribute + " = null;", w, INDENT_LEVEL);
                 } else {
-                    writeWithIndentationAndNewLine("protected $" + attribute + ";", w, 0);
+                    writeWithIndentationAndNewLine("protected $" + attribute + " = null;", w, 0);
                 }
             }
+
+            writeNewLine(w);
+
+            for (Field f : ctor.getOrderedArguments()) {
+                final String attribute = getJsonPropertyAnnotationValue(obj, f);
+                final String attributeUppercased = attribute.substring(0,1).toUpperCase() + attribute.substring(1);
+
+                // setter
+                writeWithIndentationAndNewLine("public function set" + attributeUppercased + " ($" + attribute + ") {", w, 0);
+                writeWithIndentationAndNewLine("$this->" + attribute + " = $" + attribute + ";", w, INDENT_LEVEL);
+                writeWithIndentationAndNewLine("}", w, -INDENT_LEVEL);
+                writeNewLine(w);
+
+                // getter
+                writeWithIndentationAndNewLine("public function get" + attributeUppercased + " () {", w, 0);
+                writeWithIndentationAndNewLine("return $this->" + attribute + ";", w, INDENT_LEVEL);
+                writeWithIndentationAndNewLine("}", w, -INDENT_LEVEL);
+                writeNewLine(w);
+            }
+
             writeWithIndentationAndNewLine("}", w, -INDENT_LEVEL);
             w.flush();
             w.close();
