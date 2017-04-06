@@ -42,6 +42,8 @@ module Killbill
         def has_next
           !@next.nil?
         end
+        
+        alias_method :hasNext, :has_next
 
         def next
           prev = @next
