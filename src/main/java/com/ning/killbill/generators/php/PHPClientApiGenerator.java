@@ -108,15 +108,17 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
                 final String attributeUppercased = attribute.substring(0,1).toUpperCase() + attribute.substring(1);
 
                 String type = getPHPTypeFromJavaType(f.getType().toString());
+                boolean needsTypeHint = false;
+
+                String fullType = "mixed|null";
                 if (type != null) {
-                    type = type + "|null";
-                } else {
-                    type = "mixed|null";
+                    needsTypeHint = (type.endsWith("Attributes"));
+                    fullType = type + "|null";
                 }
 
                 // setter
                 writeWithIndentationAndNewLine("/**", w, 0);
-                writeWithIndentationAndNewLine(" * @param " + type + " $" + attribute, w, 0);
+                writeWithIndentationAndNewLine(" * @param " + fullType + " $" + attribute, w, 0);
                 writeWithIndentationAndNewLine(" */", w, 0);
                 writeWithIndentationAndNewLine("public function set" + attributeUppercased + "($" + attribute + ")", w, 0);
                 writeWithIndentationAndNewLine("{", w, 0);
@@ -126,13 +128,25 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
 
                 // getter
                 writeWithIndentationAndNewLine("/**", w, 0);
-                writeWithIndentationAndNewLine(" * @return " + type, w, 0);
+                writeWithIndentationAndNewLine(" * @return " + fullType, w, 0);
                 writeWithIndentationAndNewLine(" */", w, 0);
                 writeWithIndentationAndNewLine("public function get" + attributeUppercased + "()", w, 0);
                 writeWithIndentationAndNewLine("{", w, 0);
                 writeWithIndentationAndNewLine("return $this->" + attribute + ";", w, INDENT_LEVEL);
                 writeWithIndentationAndNewLine("}", w, -INDENT_LEVEL);
                 writeNewLine(w);
+
+                // the type is a custom attributes class, adding a type specificer as hint for the parser
+                if (needsTypeHint) {
+                    writeWithIndentationAndNewLine("/**", w, 0);
+                    writeWithIndentationAndNewLine(" * @return string", w, 0);
+                    writeWithIndentationAndNewLine(" */", w, 0);
+                    writeWithIndentationAndNewLine("public function get" + attributeUppercased + "Type()", w, 0);
+                    writeWithIndentationAndNewLine("{", w, 0);
+                    writeWithIndentationAndNewLine("return " + type + "::class;", w, INDENT_LEVEL);
+                    writeWithIndentationAndNewLine("}", w, -INDENT_LEVEL);
+                    writeNewLine(w);
+                }
             }
 
             writeWithIndentationAndNewLine("}", w, -INDENT_LEVEL);
