@@ -31,7 +31,7 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
     private final static String LICENSE_NAME = "PHPLicense.txt";
 
     private final static int INDENT_LEVEL = 4;
-    private final static String DEFAULT_BASE_CLASS = "\\Killbill\\Client\\Resource";
+    private final static String DEFAULT_BASE_CLASS = "\\Killbill\\Client\\AbstractResource";
 
 
     protected int curIndent = 0;
