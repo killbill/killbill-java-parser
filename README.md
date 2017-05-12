@@ -1,6 +1,8 @@
 killbill-java-parser
 ====================
 
+[![build status](https://secure.travis-ci.org/killbill/killbill-java-parser.png)](https://travis-ci.org/killbill/killbill-java-parser)
+
 This is a tool built to help with Kill Bill client APIs and Jruby conversion layer for ruby plugins.
 The tool takes as an input some java src directory/files and translate those into the desired format.
 
@@ -15,6 +17,7 @@ The tool is made out of:
 Usage
 =====
 
+```
 java -cp target/killbill-java-parser-0.0.1-SNAPSHOT.jar com.ning.killbill.KillbillParser --help
   Options:
   *  -x, --classGeneratorExcludeFilter
@@ -38,5 +41,14 @@ java -cp target/killbill-java-parser-0.0.1-SNAPSHOT.jar com.ning.killbill.Killbi
        A optional filter list of java packages for the parser
        Default: []
   * -t, --target
-       The target generator
+       The target generator
+    -d, --debug
+```
 
+Example
+=====
+
+To generate types for the PHP client in an output directory:
+```
+$ java -cp target/killbill-java-parser-0.0.1-SNAPSHOT.jar com.ning.killbill.KillbillParser -i file://[PATH_TO_KILLBILL_REPO]/jaxrs/src/main/java/org -o ./output -t PHP_CLIENT_API -p org.killbill.billing.jaxrs.json
+```
