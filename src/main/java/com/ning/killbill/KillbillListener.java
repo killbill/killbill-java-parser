@@ -497,9 +497,18 @@ public class KillbillListener extends JavaBaseListener {
         if (!isIncludedInMethodOrCtorModifier("static")) {
             final VariableDeclaratorsContext variableDeclaratorsContext = ctx.variableDeclarators();
             final MemberDeclarationContext memberDeclarationContext = (MemberDeclarationContext) ctx.getParent();
-            final String type = (memberDeclarationContext.type().primitiveType() != null) ?
+            String type = (memberDeclarationContext.type().primitiveType() != null) ?
                     memberDeclarationContext.type().primitiveType().getText() :
                     memberDeclarationContext.type().classOrInterfaceType().Identifier().get(0).getText();
+
+            // Rebuilding complexe types like List<String>
+            if (memberDeclarationContext.type().primitiveType() == null) {
+                if (memberDeclarationContext.type().classOrInterfaceType().typeArguments().size() > 0) {
+                    final String typeArgument = memberDeclarationContext.type().classOrInterfaceType().typeArguments().get(0).getText();
+                    type = type + typeArgument;
+                }
+            }
+
             for (VariableDeclaratorContext cur : variableDeclaratorsContext.variableDeclarator()) {
                 final Field field = new Field(cur.variableDeclaratorId().getText(), getFullyQualifiedType(type), currentNonParameterAnnotations);
                 currentClassesEnumOrInterfaces.peekFirst().addField(field);

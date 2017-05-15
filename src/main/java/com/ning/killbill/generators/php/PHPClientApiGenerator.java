@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 
 import com.ning.killbill.com.ning.killbill.args.KillbillParserArgs;
 import com.ning.killbill.com.ning.killbill.args.KillbillParserArgs.GENERATOR_MODE;
@@ -22,6 +23,7 @@ import com.ning.killbill.objects.Annotation;
 import com.ning.killbill.objects.ClassEnumOrInterface;
 import com.ning.killbill.objects.Constructor;
 import com.ning.killbill.objects.Field;
+import com.ning.killbill.objects.Type;
 
 import com.google.common.io.Resources;
 
@@ -31,7 +33,7 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
     private final static String LICENSE_NAME = "PHPLicense.txt";
 
     private final static int INDENT_LEVEL = 4;
-    private final static String DEFAULT_BASE_CLASS = "\\Killbill\\Client\\Resource";
+    private final static String DEFAULT_BASE_CLASS = "\\Killbill\\Client\\AbstractResource";
 
 
     protected int curIndent = 0;
@@ -79,7 +81,12 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
             writeHeader(w);
 
             final String baseClass = DEFAULT_BASE_CLASS;
-            writeWithIndentationAndNewLine("class " + createClassName(obj.getName()) + " extends " + baseClass, w, 0);
+            final String className = createClassName(obj.getName());
+
+            writeWithIndentationAndNewLine("/**", w, 0);
+            writeWithIndentationAndNewLine(" * " + className, w, 0);
+            writeWithIndentationAndNewLine(" */", w, 0);
+            writeWithIndentationAndNewLine("class " + className + " extends " + baseClass, w, 0);
             writeWithIndentationAndNewLine("{", w, 0);
 
             final Constructor ctor = getJsonCreatorCTOR(obj);
@@ -87,7 +94,7 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
             for (Field f : ctor.getOrderedArguments()) {
                 final String attribute = getJsonPropertyAnnotationValue(obj, f);
 
-                String type = getPHPTypeFromJavaType(f.getType().toString());
+                String type = getPHPTypeFromJavaType(f.getType());
                 if (type != null) {
                     type = type + "|null";
                 } else {
@@ -107,12 +114,11 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
                 final String attribute = getJsonPropertyAnnotationValue(obj, f);
                 final String attributeUppercased = attribute.substring(0,1).toUpperCase() + attribute.substring(1);
 
-                String type = getPHPTypeFromJavaType(f.getType().toString());
-                boolean needsTypeHint = false;
+                String type = getPHPTypeFromJavaType(f.getType());
+                String typeHint = getPHPTypeHint(type);
 
                 String fullType = "mixed|null";
                 if (type != null) {
-                    needsTypeHint = (type.endsWith("Attributes"));
                     fullType = type + "|null";
                 }
 
@@ -137,13 +143,13 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
                 writeNewLine(w);
 
                 // the type is a custom attributes class, adding a type specificer as hint for the parser
-                if (needsTypeHint) {
+                if (typeHint != null) {
                     writeWithIndentationAndNewLine("/**", w, 0);
                     writeWithIndentationAndNewLine(" * @return string", w, 0);
                     writeWithIndentationAndNewLine(" */", w, 0);
                     writeWithIndentationAndNewLine("public function get" + attributeUppercased + "Type()", w, 0);
                     writeWithIndentationAndNewLine("{", w, 0);
-                    writeWithIndentationAndNewLine("return " + type + "::class;", w, INDENT_LEVEL);
+                    writeWithIndentationAndNewLine("return " + typeHint + "::class;", w, INDENT_LEVEL);
                     writeWithIndentationAndNewLine("}", w, -INDENT_LEVEL);
                     writeNewLine(w);
                 }
@@ -188,44 +194,64 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
         w.write("\n");
     }
 
-    protected String getPHPTypeFromJavaType(String javaType) {
-        if (javaType.equals("java.lang.String")) {
+    protected String getPHPTypeFromJavaType(Type javaType) {
+        final String baseType = javaType.getBaseType();
+
+        // Simple types
+        if (baseType.equals("java.lang.String")) {
             return "string";
-        }else if (javaType.equals("java.util.List")) {
-            return "array";
-        } else if (javaType.equals("java.util.Set")) {
-            return "array";
-        } else if (javaType.equals("java.util.Map")) {
-            return "array";
-        } else if (javaType.equals("java.lang.Boolean")) {
+        } else if (baseType.equals("java.lang.Boolean")) {
             return "bool";
-        } else if (javaType.equals("boolean")) {
+        } else if (baseType.equals("boolean")) {
             return "bool";
-        } else if (javaType.equals("java.lang.Integer")) {
+        } else if (baseType.equals("java.lang.Integer")) {
             return "int";
-        } else if (javaType.equals("int")) {
+        } else if (baseType.equals("int")) {
             return "int";
-        } else if (javaType.equals("java.lang.Long")) {
+        } else if (baseType.equals("java.lang.Long")) {
             return "int"; // not sure?
-        } else if (javaType.equals("java.math.BigDecimal")) {
+        } else if (baseType.equals("java.math.BigDecimal")) {
             return "float";
-        } else if (javaType.equals("java.lang.Iterable")) {
+        } else if (baseType.equals("java.lang.Iterable")) {
             return null; // not sure?
         }
 
-        else if (javaType.equals("java.util.Date")) {
+        // Stringified object types
+        else if (baseType.equals("java.util.Date")) {
             return "string";
-        } else if (javaType.equals("org.joda.time.LocalDate")) {
+        } else if (baseType.equals("org.joda.time.LocalDate")) {
             return "string"; // not sure?
-        } else if (javaType.equals("org.joda.time.DateTime")) {
+        } else if (baseType.equals("org.joda.time.DateTime")) {
             return "string"; // not sure?
         }
 
-        else if (javaType.startsWith("org.killbill.billing.jaxrs.json.")) {
+        // Array types
+        else if (baseType.equals("java.util.List") || baseType.equals("java.util.Set")) {
+            if (javaType.getGenericType() != null) {
+                Type subType = new Type(javaType.getGenericType(), null, null);
+                return getPHPTypeFromJavaType(subType) + "[]";
+            } else {
+                return "array"; // not sure?
+            }
+        } else if (baseType.equals("java.util.Map")) {
+            // List<Type> subTypes = javaType.getGenericSubTypes();
+            // if (subTypes.size() == 2) {
+            //     Type subType1 = new Type(subTypes.get(0).getGenericType(), null, null);
+            //     Type subType2 = new Type(subTypes.get(1).getGenericType(), null, null);
+            //
+            //     return getPHPTypeFromJavaType(subType1) + "[" + getPHPTypeFromJavaType(subType1) + "]";
+            // } else {
+            //     return "array"; // not sure?
+            // }
+            return "array";
+        }
+
+        // Object types
+        else if (baseType.startsWith("org.killbill.billing.jaxrs.json.")) {
             // Converts:
             // "org.killbill.billing.jaxrs.json.PaymentMethodPluginDetailJson" => PaymentMethodPluginDetailAttributes
             // "org.killbill.billing.jaxrs.json.CatalogJson.DurationJson" => DurationAttributes
-            String objName = javaType.substring(javaType.lastIndexOf(".") + 1);
+            String objName = baseType.substring(baseType.lastIndexOf(".") + 1);
             return createClassName(objName);
         }
 
@@ -242,6 +268,16 @@ public class PHPClientApiGenerator extends ClientLibraryBaseGenerator implements
             // "org.killbill.billing.util.tag.ControlTagType"
             System.err.println("Unmatched java type: " + javaType);
             return null;
+        }
+    }
+
+    protected String getPHPTypeHint(String phpType) {
+        List<String> noHintTypes = Arrays.asList("string", "bool", "int", "float", "array");
+
+        if (phpType == null || noHintTypes.contains(phpType)) {
+            return null;
+        } else {
+            return phpType.replace("[]", "");
         }
     }
 }
