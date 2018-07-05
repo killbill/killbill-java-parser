@@ -41,6 +41,7 @@ public class JRubyPluginGenerator extends RubyBaseGenerator {
 
     private final String NOTIFICATION_PLUGIN_API = "NotificationPluginApi";
     private final String JPLUGIN = "JPlugin";
+    private final String UNDEFINED_GENERIC = "Undefined";
 
     private static final List<ClassEnumOrInterface> STATICALLY_API_GENERATED_CLASSES = ImmutableList.<ClassEnumOrInterface>builder()
             .add(new ClassEnumOrInterface("EnumeratorIterator", ClassEnumOrInterface.ClassEnumOrInterfaceType.CLASS, null, null, false))
@@ -497,6 +498,8 @@ public class JRubyPluginGenerator extends RubyBaseGenerator {
                     writeWithIndentationAndNewLine(tmp + "[k] = v", w, 0);
                     writeWithIndentationAndNewLine("end", w, -INDENT_LEVEL);
                     writeWithIndentationAndNewLine(memberPrefix + member + " = " + tmp, w, -INDENT_LEVEL);
+                } else if (UNDEFINED_GENERIC.equals(returnValueType)) {
+                    // generic type; leave it as is
                 } else {
                     final ClassEnumOrInterface classEnumOrInterface = findClassEnumOrInterface(returnValueType, allClasses);
                     if (classEnumOrInterface.isEnum()) {
@@ -684,6 +687,8 @@ public class JRubyPluginGenerator extends RubyBaseGenerator {
                     writeWithIndentationAndNewLine(tmp + ".put(k, v)", w, 0);
                     writeWithIndentationAndNewLine("end", w, -INDENT_LEVEL);
                     writeWithIndentationAndNewLine(memberPrefix + member + " = " + tmp, w, -INDENT_LEVEL);
+                } else if (UNDEFINED_GENERIC.equals(returnValueType)) {
+                    // generic type; leave it as is
                 } else {
                     final ClassEnumOrInterface classEnumOrIfce = findClassEnumOrInterface(returnValueType, allClasses);
                     if (classEnumOrIfce.isEnum()) {
@@ -814,7 +819,7 @@ public class JRubyPluginGenerator extends RubyBaseGenerator {
         final List<String> superInterfaces = Lists.reverse(obj.getSuperInterfaces());
         for (final String cur : superInterfaces) {
             // Don't expect to find those in our packages
-            if (cur.startsWith("java.lang")) {
+            if (cur.startsWith("java.lang") || cur.startsWith("java.io")) {
                 addMissingMethodsFromJavaLang(cur, allClasses, result);
                 continue;
             }
