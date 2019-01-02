@@ -460,7 +460,7 @@ public class JRubyPluginGenerator extends RubyBaseGenerator {
                     writeWithIndentationAndNewLine("end", w, -INDENT_LEVEL);
                 } else if ("org.joda.time.DateTimeZone".equals(returnValueType)) {
                     writeWithIndentationAndNewLine("if !" + memberPrefix + member + ".nil?", w, 0);
-                    writeWithIndentationAndNewLine(memberPrefix + member + " = " + "TZInfo::Timezone.get(" + memberPrefix + member + ".get_id)", w, INDENT_LEVEL);
+                    writeWithIndentationAndNewLine(memberPrefix + member + " = " + "TZInfo::Timezone.get(" + memberPrefix + member + ".get_id) rescue "  + memberPrefix + member + ".get_id", w, INDENT_LEVEL);
                     writeWithIndentationAndNewLine("end", w, -INDENT_LEVEL);
                 } else if ("java.util.List".equals(returnValueType) ||
                         "java.util.Collection".equals(returnValueType) ||
